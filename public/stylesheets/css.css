@@ -1,0 +1,42 @@
+body {
+  font: 20px arial;
+  text-align: center;
+}
+
+input, select {
+  font-size:20px;
+  line-height:1.5em;
+  width:250px;
+  text-align:center;
+  box-sizing:border-box;
+}
+
+.thesubmit {
+  color: black;
+  background-color: #EEE;
+}
+
+select {
+
+}
+
+a {
+  color: black;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+span {
+  color: red;
+}
+
+div {
+  font-size:10px;
+  color:#AAA;
+}
+
+img {
+  display: none;
+}
