@@ -1,5 +1,6 @@
 var cheerio = require('cheerio');
 var request  = require('request');
+var _ = require('underscore');
 
 var getNumPages = function(id){
   return getThreadPage(id).then(function(page){
@@ -10,12 +11,8 @@ var getNumPages = function(id){
   });
 };
 
-var numPagesToRange = function(numPages){
-  var arr = [];
-  for (var i = 1; i <= numPages; i++){
-    arr.push(i);
-  }
-  return arr;
+var numPagesToPageNumbers = function(numPages){
+  return _.range(1, numPages + 1);
 };
 
 var getThreadPage = function(id, page){
@@ -42,26 +39,18 @@ var threadPageToYoutubeIds = function(page){
 };
 
 var getWholeThread = function(id, numPages){
-  getNumPages(id)
-  .then(numPagesToRange)
-  .then(function(range){
-    return Promise.all(range.map(getThreadPage.bind(null, id)));
-  })
-  .then(function(pagesArray){
-    return pagesArray.map(threadPageToYoutubeIds)
-  })
-  .then(function(idsArrays){
-    return idsArrays.reduce(function(memo, current){
-      return memo.concat(current); 
-    });
-  })
-  .then(console.log);
+  return getNumPages(id)
+    .then(numPagesToPageNumbers)
+    .then(function(pageNumbers){
+      return pageNumbers.map(getThreadPage.bind(null, id))
+    })
+    .then(function(requests){
+      return Promise.all(requests);
+    })
+    .then(function(pagesArray){
+      return pagesArray.map(threadPageToYoutubeIds)
+    })
+    .then(_.flatten);
 };
 
-var processThread = function(id){
-
-};
-
-// getThreadPage(84672).then(threadPageToYoutubeIds).then(function(d){ console.log(d) });
-
-getWholeThread(84672);
+module.exports = getWholeThread;

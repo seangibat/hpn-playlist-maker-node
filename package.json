@@ -17,6 +17,7 @@
     "node-persist": "0.0.2",
     "request": "^2.51.0",
     "serve-favicon": "~2.2.0",
+    "underscore": "^1.8.3",
     "youtube-api": "^0.3.2"
   }
 }
