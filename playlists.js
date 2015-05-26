@@ -3,7 +3,7 @@ var cheerio = require('cheerio');
 var google = require('googleapis');
 var youtube = google.youtube('v3');
 var storage = require('node-persist');
-var envVars = require('secrets.js'); // options
+var envVars = require('./secrets.js'); // options
 var OAuth2 = google.auth.OAuth2;
 var oauth2Client = new OAuth2(envVars.CLIENT_ID, envVars.CLIENT_SECRET, envVars.REDIRECT_URL);
 google.options({ auth: oauth2Client });
@@ -87,7 +87,7 @@ var playlist = function(req, res){
   var threadId = "55097";
   var forumId = "1";
 
-  createPlaylist("TESTGIN FUCK", "wfwf", function(err, data){
+  createPlaylist("test", "wfwf", function(err, data){
     console.log(err, data);
     addToPlaylist(data.id, "y_2VAEeeMVo", function(err, data){
       console.log(err, data);
@@ -96,28 +96,8 @@ var playlist = function(req, res){
 };
 
 
-newAuthToken(function(){
+getNewAuthToken(function(){
   playlist();
 });
 
 exports.process = playlist;
-
-
-// var initialPageProcess = function(error, response, body){
-//   if (!error && response.statusCode == 200) {
-//     var $ = cheerio.load(body);
-
-//     title = $('#page-header h2').text();
-
-//     console.log(title);
-//   }
-// }
-
-// var pageProcess = function(error, response, body){
-//   if (!error && response.statusCode == 200) {
-//     var $ = cheerio.load(body);
-
-//     title = $('#page-header h2').text();
-
-//   }
-// }
