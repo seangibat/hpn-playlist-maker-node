@@ -13,6 +13,10 @@ var youtube = google.youtube('v3');
 Promise.promisifyAll(youtube.playlists);
 Promise.promisifyAll(youtube.playlistItems);
 
+oauth2Client.setCredentials({
+  refresh_token: envVars.REFRESH_TOKEN
+});
+
 var getNewAuthToken = function(){
   var options = {
     uri: "https://accounts.google.com/o/oauth2/token",
@@ -58,13 +62,13 @@ var listPlaylists = function(prevPage){
     });
 };
 
-var createPlaylist = function(thread){
+var createPlaylist = function(title, description){
   var options = {
     part: "snippet,status",
     resource: {
       snippet: { 
-        title: thread.title.replace(/[^a-z0-9\s]/gmi, ""), 
-        description: thread.description 
+        title: title.replace(/[^a-z0-9\s]/gmi, ""), 
+        description: description 
       }, 
       status: {
         privacyStatus: 'public'
@@ -73,8 +77,7 @@ var createPlaylist = function(thread){
   };
   return youtube.playlists.insertAsync(options)
     .then(function(response){
-      thread.playlistId = response[1].body.id;
-      return thread;
+      return response[1].body.id;
     });
 };
 
@@ -95,19 +98,16 @@ var addToPlaylist = function(youtube){
   return youtube.playlistItems.insertAsync(params);
 };
 
-var findOrCreatePlaylist = function(thread){
+var findPlaylist = function(thread){
   return listPlaylists()
     .then(function(playlists){
       playlists.some(function(playlist){
-        if (playlist.snippet.description === thread.description) {
-          thread.playlistId = playlist.id;
-          return true;
-        }
+        if (playlist.snippet.description === thread.description) return true;
         return false;
       });
 
-      if (!thread.playlistId) return createPlaylist(thread);
-      else return thread;
+      if (thread.playlistId) return thread.playlistId;
+      else return false;
     });
 };
 
@@ -120,9 +120,48 @@ var addAllToPlaylist = function(thread){
   }));
 };
 
-getNewAuthToken()
-.then(listPlaylists)
-.then(findOrCreatePlaylist)
-.then(addAllToPlaylist);
+var listPlaylistsVideos = function(playlistId, prevPage){ 
+  var options = {
+    playlistId: playlistId,
+    maxResults: 50,
+    pageToken: (prevPage && prevPage.nextPageToken) || "",
+    part: "snippet"
+  };
+
+  return youtube.playlistItems.listAsync(options)
+    .then(function(data){
+      if (prevPage && prevPage.items) {
+        data[0].items = prevPage.items.concat(data[0].items);
+      }
+
+      if (data[0].nextPageToken) {
+        return listPlaylistsVideos(playlistId, data[0]);
+      }
+
+      return data[0].items.map(function(video){
+        return video.snippet.resourceId.videoId;
+      });
+    });
+};
+
+var processYoutubeIds = function(thread){
+  getNewAuthToken()
+  .then(findPlaylist)
+  .then(function(playlistId){
+    if (playlistId) {
+      return listPlaylistsVideos(playlistId)
+        .then(function(videoIds){
+          thread.youtubeIds = _.difference(thread.youtubeIds, videos);
+          return playlistId;
+        });
+    } else {
+      return createPlaylist(thread.title, thread.description);
+    }
+  })
+  .then(addAllToPlaylist);
+};
+
+// getNewAuthToken();
+
 
 // exports.process = playlist;
