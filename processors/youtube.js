@@ -1,8 +1,7 @@
 var request = require('request');
 var google = require('googleapis');
 var Promise = require('bluebird');
-var envVars = require('./secrets.js');
-var scraper = require('./scraper');
+var envVars = require('../secrets.js');
 var OAuth2 = google.auth.OAuth2;
 
 var oauth2Client = new OAuth2(envVars.CLIENT_ID, envVars.CLIENT_SECRET, envVars.REDIRECT_URL);
@@ -62,13 +61,13 @@ var listPlaylists = function(prevPage){
     });
 };
 
-var createPlaylist = function(title, description){
+var createPlaylist = function(title, threadId){
   var options = {
     part: "snippet,status",
     resource: {
       snippet: { 
         title: title.replace(/[^a-z0-9\s]/gmi, ""), 
-        description: description 
+        description: threadId
       }, 
       status: {
         privacyStatus: 'public'
@@ -98,21 +97,25 @@ var addToPlaylist = function(youtube){
   return youtube.playlistItems.insertAsync(params);
 };
 
-var findPlaylist = function(thread){
+var findPlaylist = function(threadId){
   return listPlaylists()
     .then(function(playlists){
+      var playlistId;
       playlists.some(function(playlist){
-        if (playlist.snippet.description === thread.description) return true;
+        if (playlist.snippet.description === threadId) {
+          playlistId = playlist.id;
+          return true;
+        }
         return false;
       });
 
-      if (thread.playlistId) return thread.playlistId;
+      if (playlistId) return playlistId;
       else return false;
     });
 };
 
-var addAllToPlaylist = function(thread){
-  return Promise.all(thread.youtubeIds.map(function(youtubeId){
+var addAllToPlaylist = function(youtubeIds, playlistId){
+  return Promise.all(youtubeIds.map(function(youtubeId){
     return addToPlaylist({
       videoId: youtubeId,
       playlistId: playlistId
@@ -124,7 +127,7 @@ var listPlaylistsVideos = function(playlistId, prevPage){
   var options = {
     playlistId: playlistId,
     maxResults: 50,
-    pageToken: (prevPage && prevPage.nextPageToken) || "",
+    pageToken: prevPage ? prevPage.nextPageToken : "",
     part: "snippet"
   };
 
@@ -144,24 +147,26 @@ var listPlaylistsVideos = function(playlistId, prevPage){
     });
 };
 
-var processYoutubeIds = function(thread){
-  getNewAuthToken()
-  .then(findPlaylist)
+var findOrCreatePlaylist = function(threadId){
+  findPlaylist(threadId)
   .then(function(playlistId){
     if (playlistId) {
-      return listPlaylistsVideos(playlistId)
-        .then(function(videoIds){
-          thread.youtubeIds = _.difference(thread.youtubeIds, videos);
-          return playlistId;
-        });
+      return { playlistId: playlistId, isNew: false };
     } else {
       return createPlaylist(thread.title, thread.description);
     }
-  })
-  .then(addAllToPlaylist);
+  });
 };
 
-// getNewAuthToken();
+var filterOutOldVideos = function(playlistId, youtubeIds){
+  return listPlaylistsVideos(playlistId)
+    .then(function(videoIds){
+      youtubeIds = _.difference(youtubeIds, videos);
+      return youtubeIds;
+    });
+};
 
-
-// exports.process = playlist;
+exports.findPlaylist = findPlaylist;
+exports.addAllToPlaylist = addAllToPlaylist;
+exports.createPlaylist = createPlaylist;
+exports.filterOutOldVideos = filterOutOldVideos;

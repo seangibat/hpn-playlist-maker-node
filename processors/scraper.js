@@ -60,7 +60,7 @@ var getWholeThread = function(id) {
     .then(function(youtubeIds){
       return {
         youtubeIds: _.flatten(youtubeIds),
-        description: id,
+        id: id,
         title: title
       };
     });
