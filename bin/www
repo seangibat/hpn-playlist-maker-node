@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 
-var app = require('../app');
+var app = require('../main');
 var debug = require('debug')('hpn-playlists-node:server');
 var http = require('http');
 
@@ -12,7 +12,7 @@ var http = require('http');
  * Get port from environment and store in Express.
  */
 
-var port = 3002 || parseInt(process.env.PORT, 10) || 3000;
+var port = parseInt(process.env.PORT, 10) || 3000;
 app.set('port', port);
 
 /**

@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var scraper = require('../processors/scraper.js');
 var youtube = require('../processors/youtube.js');
+var _ = require('underscore');
 
 /* GET home page. */
 router.get('/', function(req, res) {
@@ -17,20 +18,23 @@ router.get('/forum/:forumId/thread/:threadId', function(req, res){
       throw new Error('There are no youtube videos in this thread you dolt!');
     } else {
       thread = threadObj;
-      return findPlaylist(thread.id);
+      return youtube.findPlaylist(thread.id);
     }
   })
   .then(function(playlistId){
     if (!playlistId){
-      return createPlaylist(thread.title, thread.id);
+      return youtube.createPlaylist(thread.title, thread.id)
         .then(function(playlistId){
-          res.end("Playlist now being created -- " + playlistId);
+          res.end("Playlist now being created. Might take a minute to finish.<br><a href='https://www.youtube.com/playlist?list=" + playlistId + "'>" + thread.title + "</a>");
           return playlistId;
         });
     } else {
-      res.end("Playlist now being updated -- " + playlistId);
+      res.end("Playlist now being updated. Might take a minute to finish.<br><a href='https://www.youtube.com/playlist?list=" + playlistId + "'>" + thread.title + "</a>");
       return youtube.filterOutOldVideos(playlistId, thread.youtubeIds)
-        .then(function(){ return playlistId });
+        .then(function(youtubeIds){ 
+          thread.youtubeIds = youtubeIds;
+          return playlistId 
+        });
     }
   })
   .then(function(playlistId){
@@ -40,6 +44,7 @@ router.get('/forum/:forumId/thread/:threadId', function(req, res){
     console.log("OK!");
   })
   .catch(function(error){
+    console.error(error);
     res.end(error.message);
   });
 });

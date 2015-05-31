@@ -3,6 +3,7 @@ var google = require('googleapis');
 var Promise = require('bluebird');
 var envVars = require('../secrets.js');
 var OAuth2 = google.auth.OAuth2;
+var _ = require('underscore');
 
 var oauth2Client = new OAuth2(envVars.CLIENT_ID, envVars.CLIENT_SECRET, envVars.REDIRECT_URL);
 google.options({ auth: oauth2Client });
@@ -15,6 +16,8 @@ Promise.promisifyAll(youtube.playlistItems);
 oauth2Client.setCredentials({
   refresh_token: envVars.REFRESH_TOKEN
 });
+
+console.log(youtube.playlistItems);
 
 var getNewAuthToken = function(){
   var options = {
@@ -80,15 +83,15 @@ var createPlaylist = function(title, threadId){
     });
 };
 
-var addToPlaylist = function(youtube){
+var addToPlaylist = function(vid){
   var params = {
     part: 'snippet',
     resource: { 
       'snippet': { 
-        'playlistId': youtube.playlistId, 
+        'playlistId': vid.playlistId, 
         'resourceId': { 
           'kind':'youtube#video', 
-          'videoId': youtube.videoId
+          'videoId': vid.videoId
         } 
       } 
     }
@@ -114,11 +117,19 @@ var findPlaylist = function(threadId){
     });
 };
 
+// Pretty awful -- the youtube API won't accept a blast of 
+// playlist updates. You have to use setTimeout to stagger them.
 var addAllToPlaylist = function(youtubeIds, playlistId){
-  return Promise.all(youtubeIds.map(function(youtubeId){
-    return addToPlaylist({
-      videoId: youtubeId,
-      playlistId: playlistId
+  return Promise.all(youtubeIds.map(function(youtubeId, index){
+    return new Promise(function(resolve, reject){
+      setTimeout(function(){
+        addToPlaylist({
+          videoId: youtubeId,
+          playlistId: playlistId
+        })
+        .then(resolve)
+        .catch(reject);
+      }, index * 200);
     });
   }));
 };
@@ -161,7 +172,8 @@ var findOrCreatePlaylist = function(threadId){
 var filterOutOldVideos = function(playlistId, youtubeIds){
   return listPlaylistsVideos(playlistId)
     .then(function(videoIds){
-      youtubeIds = _.difference(youtubeIds, videos);
+      console.log(videoIds);
+      youtubeIds = _.difference(youtubeIds, videoIds);
       return youtubeIds;
     });
 };

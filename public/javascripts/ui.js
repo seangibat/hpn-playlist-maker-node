@@ -10,7 +10,7 @@ $(document).ready(function(){
     $p.html('loading..');
     var threadId = $('input').val();
     var forumId = $('option:selected').attr('value');
-    $('input').val('');
+    $('.thread-id').val('');
     $.get('/forum/' + forumId + "/thread/" + threadId, function(data){
       $p.html(data);
     })

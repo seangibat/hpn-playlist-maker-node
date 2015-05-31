@@ -59,7 +59,7 @@ var getWholeThread = function(id) {
     })
     .then(function(youtubeIds){
       return {
-        youtubeIds: _.flatten(youtubeIds),
+        youtubeIds: _.unique(_.flatten(youtubeIds)),
         id: id,
         title: title
       };
