@@ -32,9 +32,14 @@ var getThreadPage = function(id, page) {
 
 var threadPageToYoutubeIds = function(page) {
   var $ = cheerio.load(page);
-  var urls = $('embed').map(function(i, d) {
+  var urls = $('iframe').filter(function(i, el) {
+    return $(this).attr('src').includes('https://www.youtube.com/embed/');
+  }).map(function(i, d) {
+    console.log(d);
     var url = $(d).attr('src');
-    return url.split('youtube.com/v/')[1].substring(0, 11);
+    console.log('url?');
+    console.log(url);
+    return url.split('https://www.youtube.com/embed/')[1];
   });
   return urls.get();
 };
@@ -45,10 +50,12 @@ var getWholeThread = function(id) {
   return getNumPagesAndTitle(id)
     .then(function(thread){
       title = thread.title;
+      console.log(title);
       return thread.numPages;
     })
     .then(numPagesToPageNumbers)
     .then(function(pageNumbers) {
+      console.log(pageNumbers);
       return pageNumbers.map(getThreadPage.bind(null, id))
     })
     .then(function(requests) {
@@ -58,6 +65,7 @@ var getWholeThread = function(id) {
       return pagesArray.map(threadPageToYoutubeIds)
     })
     .then(function(youtubeIds){
+      console.log(youtubeIds);
       return {
         youtubeIds: _.unique(_.flatten(youtubeIds)),
         id: id,

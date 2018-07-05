@@ -22,6 +22,7 @@ router.get('/forum/:forumId/thread/:threadId', function(req, res){
     }
   })
   .then(function(playlistId){
+    console.log('playlist', playlistId);
     if (!playlistId){
       return youtube.createPlaylist(thread.title, thread.id)
         .then(function(playlistId){
