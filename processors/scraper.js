@@ -1,6 +1,8 @@
 var cheerio = require('cheerio');
 var request = require('request');
 var _ = require('underscore');
+var envVars = require('../secrets.js');
+var headers = envVars.HEADERS;
 
 var getNumPagesAndTitle = function(id) {
   return getThreadPage(id).then(function(page) {
@@ -17,10 +19,12 @@ var numPagesToPageNumbers = function(numPages) {
 };
 
 var getThreadPage = function(id, page) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function(resolve,
+      reject) {
     page = page || 1;
     page = (page - 1) * 30;
-    request('http://forums.hipinion.com/viewtopic.php?f=1&t=' + id + '&start=' + page, function(error, response, body) {
+    request({url: 'http://forums.hipinion.com/viewtopic.php?f=1&t=' + id + '&start=' + page, headers: headers}, function(error, response, body) {
+      console.log(error, response, body);
       if (!error && response.statusCode == 200) {
         resolve(body);
       } else {
