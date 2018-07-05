@@ -26,11 +26,11 @@ router.get('/forum/:forumId/thread/:threadId', function(req, res){
     if (!playlistId){
       return youtube.createPlaylist(thread.title, thread.id)
         .then(function(playlistId){
-          res.end("Playlist now being created. Might take a minute to finish.<br><a href='https://www.youtube.com/playlist?list=" + playlistId + "'>" + thread.title + "</a>");
+          res.end("Playlist now being created. Might take a minute to finish.<br><a target='_blank' href='https://www.youtube.com/playlist?list=" + playlistId + "'>" + thread.title + "</a>");
           return playlistId;
         });
     } else {
-      res.end("Playlist now being updated. Might take a minute to finish.<br><a href='https://www.youtube.com/playlist?list=" + playlistId + "'>" + thread.title + "</a>");
+      res.end("Playlist now being updated. Might take a minute to finish.<br><a target='_blank' href='https://www.youtube.com/playlist?list=" + playlistId + "'>" + thread.title + "</a>");
       return youtube.filterOutOldVideos(playlistId, thread.youtubeIds)
         .then(function(youtubeIds){ 
           thread.youtubeIds = youtubeIds;
